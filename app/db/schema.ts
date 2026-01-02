@@ -54,6 +54,7 @@ export const mast_sessions = pgTable('mast_sessions', {
   sessionType: varchar('session_type', { length: 50 }).notNull(), // 'Release' or 'Edging'
   sessionIntensity: integer('session_intensity').notNull(), // Satisfaction/Arousal index 1-10
   duration: integer('duration').notNull(), // Minutes
+  notes: text("notes").notNull(),
   
   // Timing
   loggedAt: timestamp('logged_at').notNull(), // The actual date/time of the session

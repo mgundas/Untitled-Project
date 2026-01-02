@@ -2,7 +2,7 @@ import { addWin } from "../actions";
 import { Timer, Zap } from "lucide-react";
 
 type Props = {
-    action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<void>;
 };
 
 const LogModal = ({ action }: Props) => {
@@ -84,6 +84,17 @@ const LogModal = ({ action }: Props) => {
           name="time"
           id=""
           className="bg-slate-800/50 rounded-4xl text-sm p-5 outline-none focus:ring-1 focus:ring-fuchsia-500 text-white font-bold w-full"
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] px-1">
+          Notes
+        </label>
+        <textarea
+          name="notes"
+          placeholder="Things that made you horny"
+          id=""
+          className="w-full bg-slate-800/50 rounded-lg p-5 text-sm outline-none focus:ring-1 focus:ring-fuchsia-500 text-white font-black"
         />
       </div>
       <div className="flex flex-col gap-2">

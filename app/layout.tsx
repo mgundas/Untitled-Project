@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "./components/Navbar";
+import { BoltIcon, House, Mars } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,11 +28,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col h-screen`}
       >
         <Providers>
           <Navbar />
-          {children}
+          <main className="grow overflow-auto">
+            {children}
+          </main>
+          <footer className="grid grid-cols-3">
+            <button className="flex items-center justify-center p-4 hover:bg-slate-900 cursor-pointer transition-all ease-in-out duration-250"><House /></button>
+            <button className="flex items-center justify-center p-4"><Mars /></button>
+            <button className="flex items-center justify-center p-4"><BoltIcon /></button>
+          </footer>
         </Providers>
       </body>
     </html>
