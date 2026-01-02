@@ -12,7 +12,7 @@ export async function addWin(formData: FormData) {
 
   if (!session?.user?.id || !data) return;
 
-  // Drizzle insert syntax:
+  // Drizzle insert syntax: test
   await db.insert(mast_sessions).values({
     userId: session.user.id,
     sessionType: data.type as string,
