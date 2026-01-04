@@ -6,6 +6,7 @@ import { useState } from "react";
 import LogModal from "./LogModal";
 import { addWin } from "../actions";
 import { ModeToggle } from "./ModeToggle";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export function Navbar() {
   const { data: session, status } = useSession();
@@ -17,8 +18,8 @@ export function Navbar() {
   };
 
   return (
-    <nav className="flex items-center justify-between p-4 px-6 bg-neutral-100 dark:bg-neutral-900">
-      <span className="text-xl">MastPlanner</span>
+    <nav className="sticky top-0 left-0 flex items-center justify-between p-4 px-6 bg-neutral-100 dark:bg-neutral-900">
+      <SidebarTrigger />
 
       {session ? (
         <div className="flex items-center gap-4">

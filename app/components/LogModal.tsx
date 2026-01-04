@@ -9,14 +9,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { useState } from "react";
+import { use, useState } from "react";
+import { useModalStateStore } from "../store/useModalStateStore";
 
 type Props = {
   action: (formData: FormData) => Promise<void>;
 };
 
 const LogModal = ({ action }: Props) => {
-  const [open, setOpen] = useState(false);
+  const isOpen = useModalStateStore((state) => state.isOpen);
+  const setOpen = useModalStateStore((state) => state.setOpen);
+
 
   const submitHandler = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,13 +33,13 @@ const LogModal = ({ action }: Props) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={isOpen} onOpenChange={setOpen}>
       <DialogTrigger className="p-2 rounded-full text-white bg-fuchsia-600 dark:shadow-lg shadow-fuchsia-900/40 hover:bg-fuchsia-500 active:scale-90 transition-all ease-in-out duration-300 cursor-pointer">
           <Plus />
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Are you absolutely sure?</DialogTitle>
+          <DialogTitle>Record a Session</DialogTitle>
         </DialogHeader>
         <DialogDescription></DialogDescription>
         <form
