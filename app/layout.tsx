@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "./components/Navbar";
 import { BoltIcon, House, Mars } from "lucide-react";
+import { Toaster } from "@/components/ui/sonner"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning={true}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col h-screen`}
       >
@@ -40,6 +41,7 @@ export default function RootLayout({
             <button className="flex items-center justify-center p-4"><Mars /></button>
             <button className="flex items-center justify-center p-4"><BoltIcon /></button>
           </footer>
+          <Toaster />
         </Providers>
       </body>
     </html>
