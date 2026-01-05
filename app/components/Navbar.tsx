@@ -1,12 +1,13 @@
 "use client";
 
-import { EllipsisVertical, Plus } from "lucide-react";
+import { EllipsisVertical, Github, Plus } from "lucide-react";
 import { useSession, signOut, signIn } from "next-auth/react";
 import { useState } from "react";
 import LogModal from "./LogModal";
 import { addWin } from "../actions";
 import { ModeToggle } from "./ModeToggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   const { data: session, status } = useSession();
@@ -40,8 +41,11 @@ export function Navbar() {
           <ModeToggle />
         </div>
       ) : (
-        <div>
-          <button onClick={() => signIn("github")}>Login</button>
+        <div className="flex items-center gap-4">
+          <Button variant="outline" size="default" onClick={() => signIn("github")}>
+            <Github className="" />
+            Sign in with GitHub
+          </Button>
           <ModeToggle />
         </div>
       )}

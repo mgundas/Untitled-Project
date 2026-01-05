@@ -36,7 +36,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Providers>
-          {session ? <AppSidebar /> : null}
+          <AppSidebar />
           <main className="h-svh overflow-hidden lg:p-2 lg:pl-0 w-full">
             <div className="lg:border lg:rounded-xl overflow-hidden flex flex-col items-center justify-start h-full w-full bg-background">
               <Navbar />
