@@ -18,8 +18,8 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 left-0 flex items-center justify-between p-4 px-6 bg-neutral-100 dark:bg-neutral-900">
-      <SidebarTrigger />
+    <header className="flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 py-2 sm:py-3 border-b bg-card sticky top-0 z-10 w-full">
+      <SidebarTrigger className="-ml-1 sm:-ml-2" />
 
       {session ? (
         <div className="flex items-center gap-4">
@@ -45,6 +45,6 @@ export function Navbar() {
           <ModeToggle />
         </div>
       )}
-    </nav>
+    </header>
   );
 }

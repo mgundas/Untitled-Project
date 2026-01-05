@@ -29,9 +29,9 @@ const items = [
 
 export function AppSidebar() {
   return (
-    <Sidebar>
+    <Sidebar className="lg:border-r-0!" collapsible="icon">
     <SidebarHeader>
-      <div className="text-lg font-bold p-4">MastPlanner</div>
+      <div className="group-data-[collapsible=icon]:hidden text-lg font-bold p-4">MastPlanner</div>
     </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
@@ -53,7 +53,7 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="p-4 text-sm text-center text-gray-500">
+        <div className="p-4 text-sm text-center text-gray-500 group-data-[collapsible=icon]:hidden">
           &copy; {new Date().getFullYear()} MastPlanner
         </div>
       </SidebarFooter>

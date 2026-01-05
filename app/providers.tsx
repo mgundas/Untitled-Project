@@ -23,7 +23,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       disableTransitionOnChange
     >
       <SessionProvider>
-        <SidebarProvider className="block">
+        <SidebarProvider className="bg-sidebar">
           {children}
         </SidebarProvider>
       </SessionProvider>
