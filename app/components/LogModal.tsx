@@ -11,6 +11,7 @@ import {
 import { toast } from "sonner";
 import { use, useState } from "react";
 import { useModalStateStore } from "../store/useModalStateStore";
+import { Button } from "@/components/ui/button";
 
 type Props = {
   action: (formData: FormData) => Promise<void>;
@@ -19,7 +20,6 @@ type Props = {
 const LogModal = ({ action }: Props) => {
   const isOpen = useModalStateStore((state) => state.isOpen);
   const setOpen = useModalStateStore((state) => state.setOpen);
-
 
   const submitHandler = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -34,8 +34,10 @@ const LogModal = ({ action }: Props) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
-      <DialogTrigger className="p-2 rounded-full text-white bg-fuchsia-600 dark:shadow-lg shadow-fuchsia-900/40 hover:bg-fuchsia-500 active:scale-90 transition-all ease-in-out duration-300 cursor-pointer">
+      <DialogTrigger asChild>
+        <Button className="" variant="ghost" size="icon">
           <Plus />
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
