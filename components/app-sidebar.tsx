@@ -1,5 +1,6 @@
-import { Activity, ChevronsUpDown, Home } from "lucide-react";
+"use client"; // Keep this at the top
 
+import { ChevronsUpDown, Home } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,8 +13,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { authOptions } from "@/app/lib/auth";
-import { getServerSession } from "next-auth";
+
+// 1. Import useSession instead of getServerSession
+import { useSession, signOut } from "next-auth/react"; 
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,25 +25,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
-import { Avatar, AvatarImage } from "@radix-ui/react-avatar";
-import { AvatarFallback } from "./ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 
-// Menu items.
 const items = [
   {
     title: "Home",
     url: "/",
     icon: Home,
   },
-  {
-    title: "Guided Sensation",
-    url: "/guided-sensation",
-    icon: Activity,
-  },
 ];
 
-export async function AppSidebar() {
-  const session = await getServerSession(authOptions);
+// 2. Remove 'async' (hooks handle the data fetching now)
+export function AppSidebar() {
+  // 3. Get the session data via hook
+  const { data: session } = useSession();
+
   return (
     <Sidebar className="lg:border-r-0!" collapsible="icon">
       <SidebarHeader>
@@ -67,14 +66,17 @@ export async function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
       {session && (
         <SidebarFooter>
           <DropdownMenu>
-            <DropdownMenuTrigger>
+            <DropdownMenuTrigger asChild>
               <div className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-accent transition-colors mt-2">
                 <Avatar className="size-8">
                   <AvatarImage className="rounded-full" src={session.user?.image || "/default-avatar.png"} />
-                  <AvatarFallback className="text-xs">SW</AvatarFallback>
+                  <AvatarFallback className="text-xs">
+                    {session.user?.name?.charAt(0) || "U"}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 text-left">
                   <p className="font-medium text-sm">{session.user?.name}</p>
@@ -91,7 +93,10 @@ export async function AppSidebar() {
                 <DropdownMenuItem>Settings</DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive">Log out</DropdownMenuItem>
+              {/* This will now work perfectly */}
+              <DropdownMenuItem onSelect={() => signOut()} className="text-destructive">
+                Log out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarFooter>

@@ -1,4 +1,3 @@
-import { addWin } from "../actions";
 import { Plus, Timer, Zap } from "lucide-react";
 import {
   Dialog,
@@ -9,22 +8,22 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { use, useState } from "react";
 import { useModalStateStore } from "../store/useModalStateStore";
 import { Button } from "@/components/ui/button";
+import { addWin } from "../actions";
 
-type Props = {
-  action: (formData: FormData) => Promise<void>;
-};
-
-const LogModal = ({ action }: Props) => {
+const LogModal = () => {
   const isOpen = useModalStateStore((state) => state.isOpen);
   const setOpen = useModalStateStore((state) => state.setOpen);
+
+    const handleAddWin = async (formData: FormData) => {
+      await addWin(formData);
+    };
 
   const submitHandler = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    await action(formData);
+    await handleAddWin(formData);
     setOpen(false);
 
     toast("Session has ben logged.", {

@@ -9,12 +9,12 @@ export default async function Home() {
   const session = await getServerSession(authOptions);
 
   // Fetch wins for this user
-  const userSessions = session?.user?.id
+  /*const userSessions = session?.user?.id
     ? await db.query.mast_sessions.findMany({
         where: eq(mast_sessions.userId, session.user.id),
         orderBy: [desc(mast_sessions.createdAt)],
       })
-    : [];
+    : [];*/
 
   return (
     <main className="flex-1 overflow-auto w-full">
@@ -23,7 +23,7 @@ export default async function Home() {
           {session ? (
             <>
               <div className="space-y-4">
-                {userSessions.length > 0 ? (
+                {/*userSessions.length > 0 ? (
                   userSessions.map((win) => (
                     <div
                       key={win.id}
@@ -46,7 +46,7 @@ export default async function Home() {
                   ))
                 ) : (
                   <NoSessions />
-                )}
+                )*/}
               </div>
             </>
           ) : (
