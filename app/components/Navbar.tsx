@@ -3,6 +3,7 @@
 import { Github } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import LogModal from "./LogModal";
+import { addWin } from "../actions";
 import { ModeToggle } from "./ModeToggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ export function Navbar() {
 
       {session ? (
         <div className="flex items-center gap-4">
-          <LogModal />
+          <SettingsModal />
           <ModeToggle />
         </div>
       ) : (

@@ -1,11 +1,28 @@
-import { create } from 'zustand'
+import { create } from "zustand";
 
 interface ModalState {
-  isOpen: boolean
-  setOpen: (status:boolean) => void
+  modals: {
+    id: string | null;
+    isOpen: boolean;
+  }[];
+  setOpen: (id: string, status: boolean) => void;
 }
 
 export const useModalStateStore = create<ModalState>((set) => ({
-  isOpen: false,
-  setOpen: (status:boolean) => set(() => ({ isOpen: status })),
-}))
+  modals: [
+    {
+      id: "settings",
+      isOpen: false,
+    },
+    {
+      id: "logs",
+      isOpen: false,
+    },
+  ],
+  setOpen: (id: string, status: boolean) =>
+    set((state) => ({
+      modals: state.modals.map((modal) =>
+        modal.id === id ? { ...modal, isOpen: status } : modal
+      ),
+    })),
+}));
