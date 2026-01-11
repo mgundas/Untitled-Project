@@ -3,7 +3,6 @@
 import { Github } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import LogModal from "./LogModal";
-import { addWin } from "../actions";
 import { ModeToggle } from "./ModeToggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";

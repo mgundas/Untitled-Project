@@ -44,7 +44,7 @@ export function AppSidebar() {
     <Sidebar className="lg:border-r-0!" collapsible="icon">
       <SidebarHeader>
         <div className="group-data-[collapsible=icon]:hidden text-lg font-bold p-4">
-          MastPlanner
+          App
         </div>
       </SidebarHeader>
       <SidebarContent>
