@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+"use client";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useModalStateStore } from "../store/useModalStateStore";
-import { Button } from "@/components/ui/button";
 
 const SettingsModal = () => {
   const isOpen = useModalStateStore((state) => state.modals.find(modal => modal.id === "settings")?.isOpen);
@@ -16,11 +15,6 @@ const SettingsModal = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => setModalOpen("settings", open)}>
-      <DialogTrigger asChild>
-        <Button className="" variant="ghost" size="icon">
-          <Plus />
-        </Button>
-      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>

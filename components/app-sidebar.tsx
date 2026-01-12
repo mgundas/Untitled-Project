@@ -1,4 +1,4 @@
-"use client"; // Keep this at the top
+"use client";
 
 import { ChevronsUpDown, Home } from "lucide-react";
 import {
@@ -13,10 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-
-// 1. Import useSession instead of getServerSession
 import { useSession, signOut } from "next-auth/react"; 
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +24,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import Link from "next/link";
+import { useModalStateStore } from "@/app/store/useModalStateStore";
 
 const items = [
   {
@@ -36,10 +34,9 @@ const items = [
   },
 ];
 
-// 2. Remove 'async' (hooks handle the data fetching now)
 export function AppSidebar() {
-  // 3. Get the session data via hook
   const { data: session } = useSession();
+  const setOpen = useModalStateStore((state) => state.setOpen);
 
   return (
     <Sidebar className="lg:border-r-0!" collapsible="icon">
@@ -91,10 +88,9 @@ export function AppSidebar() {
             <DropdownMenuContent align="end" className="w-50">
               <DropdownMenuGroup>
                 <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setOpen("settings", true)}>Settings</DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              {/* This will now work perfectly */}
               <DropdownMenuItem onSelect={() => signOut()} className="text-destructive">
                 Log out
               </DropdownMenuItem>
