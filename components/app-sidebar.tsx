@@ -69,20 +69,20 @@ export function AppSidebar() {
         <SidebarFooter>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <div className="flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-accent transition-colors mt-2">
-                <Avatar className="size-8">
+              <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:mb-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center rounded-lg cursor-pointer hover:bg-accent transition-colors mt-2">
+                <Avatar className="size-8 group-data-[collapsible=icon]:size-6">
                   <AvatarImage className="rounded-full" src={session.user?.image || "/default-avatar.png"} />
                   <AvatarFallback className="text-xs">
                     {session.user?.name?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 min-w-0 text-left">
+                <div className="flex-1 min-w-0 text-left group-data-[collapsible=icon]:hidden">
                   <p className="font-medium text-sm">{session.user?.name}</p>
                   <p className="text-xs text-muted-foreground truncate">
                     {session.user?.email}
                   </p>
                 </div>
-                <ChevronsUpDown className="size-4 text-muted-foreground shrink-0" />
+                <ChevronsUpDown className="size-4 text-muted-foreground shrink-0 group-data-[collapsible=icon]:hidden" />
               </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-50">
