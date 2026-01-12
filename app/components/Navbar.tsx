@@ -5,6 +5,7 @@ import { useSession, signIn } from "next-auth/react";
 import { ModeToggle } from "./ModeToggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
+import SettingsModal from "./SettingsModal";
 
 export function Navbar() {
   const { data: session, status } = useSession();
