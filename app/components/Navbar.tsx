@@ -1,6 +1,6 @@
 "use client";
 
-import { Github } from "lucide-react";
+import { Github, GoalIcon } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import { ModeToggle } from "./ModeToggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -25,6 +25,10 @@ export function Navbar() {
           <Button variant="outline" size="default" onClick={() => signIn("github")}>
             <Github className="" />
             Sign in with GitHub
+          </Button>
+                    <Button variant="outline" size="default" onClick={() => signIn("google")}>
+            <GoalIcon className="" />
+            Sign in with Google
           </Button>
           <ModeToggle />
         </div>
