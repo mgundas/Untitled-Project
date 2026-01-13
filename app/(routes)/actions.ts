@@ -1,9 +1,9 @@
 "use server"
 
-import { db } from "./db";
-import { mast_sessions } from "./db/schema";
+import { db } from "../db";
+import { mast_sessions } from "../db/schema";
 import { getServerSession } from "next-auth";
-import { authOptions } from "./lib/auth";
+import { authOptions } from "../lib/auth";
 import { revalidatePath } from "next/cache";
 
 export async function addWin(formData: FormData) {
