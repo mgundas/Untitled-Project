@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import { Navbar } from "../components/Navbar";
 import { Toaster } from "@/components/ui/sonner";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../lib/auth";
+import { authOptions } from "../../lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import SettingsModal from "../components/SettingsModal";
 

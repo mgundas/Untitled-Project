@@ -5,7 +5,6 @@ import { SessionProvider } from "next-auth/react";
 import * as React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/app-sidebar";
 
 function ThemeProvider({
   children,
