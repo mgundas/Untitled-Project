@@ -1,11 +1,10 @@
 "use client";
 
-import { Github } from "lucide-react";
+import { Github, Shield } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
 import { ModeToggle } from "./ModeToggle";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import SettingsModal from "./SettingsModal";
 
 export function Navbar() {
   const { data: session, status } = useSession();
@@ -25,6 +24,10 @@ export function Navbar() {
           <Button variant="outline" size="default" onClick={() => signIn("github")}>
             <Github className="" />
             Sign in with GitHub
+          </Button>
+          <Button variant="outline" size="default" onClick={() => signIn("google")}>
+            <Shield className="" />
+            Sign in with Google
           </Button>
           <ModeToggle />
         </div>
