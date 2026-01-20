@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
-import SettingsModal from "../components/SettingsModal";
+import { ModalManager } from "../components/ModalManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +42,7 @@ export default async function RootLayout({
             <div className="lg:border lg:rounded-xl overflow-hidden flex flex-col items-center justify-start h-full w-full bg-background">
               <Navbar />
               {children}
-              <SettingsModal />
+              <ModalManager />
             </div>
           </main>
           <Toaster />

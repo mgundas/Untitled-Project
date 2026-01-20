@@ -24,7 +24,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import Link from "next/link";
-import { useModalStateStore } from "@/app/store/useModalStateStore";
+import { useModal } from "@/app/store/useModalStateStore";
 
 const items = [
   {
@@ -36,7 +36,7 @@ const items = [
 
 export function AppSidebar() {
   const { data: session } = useSession();
-  const setOpen = useModalStateStore((state) => state.setOpen);
+  const openModal = useModal((state) => state.open);
 
   return (
     <Sidebar className="lg:border-r-0!" collapsible="icon">
@@ -88,7 +88,7 @@ export function AppSidebar() {
             <DropdownMenuContent align="end" className="w-50">
               <DropdownMenuGroup>
                 <DropdownMenuItem>Profile</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setOpen("settings", true)}>Settings</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => openModal("settings")}>Settings</DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => signOut()} className="text-destructive">

@@ -7,14 +7,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useModalStateStore } from "../store/useModalStateStore";
 
-const SettingsModal = () => {
-  const isOpen = useModalStateStore((state) => state.modals.find(modal => modal.id === "settings")?.isOpen);
-  const setModalOpen = useModalStateStore((state) => state.setOpen);
+interface SettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const SettingsModal = ({ isOpen, onClose }: SettingsModalProps) => {
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => setModalOpen("settings", open)}>
+    <Dialog open={isOpen} onOpenChange={(open) => onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
