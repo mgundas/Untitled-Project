@@ -13,7 +13,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useSession, signOut } from "next-auth/react"; 
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,7 +34,6 @@ const items = [
 ];
 
 export function AppSidebar() {
-  const { data: session } = useSession();
   const openModal = useModal((state) => state.open);
 
   return (
@@ -64,22 +62,20 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      {session && (
         <SidebarFooter>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:mb-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center rounded-lg cursor-pointer hover:bg-accent transition-colors mt-2">
                 <Avatar className="size-8 group-data-[collapsible=icon]:size-6">
-                  <AvatarImage className="rounded-full" src={session.user?.image || "/default-avatar.png"} />
+                  <AvatarImage className="rounded-full" src={"/default-avatar.png"} />
                   <AvatarFallback className="text-xs">
-                    {session.user?.name?.charAt(0) || "U"}
+                    {"U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0 text-left group-data-[collapsible=icon]:hidden">
-                  <p className="font-medium text-sm">{session.user?.name}</p>
+                  <p className="font-medium text-sm">hfghfgh</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {session.user?.email}
+                    fghfhf
                   </p>
                 </div>
                 <ChevronsUpDown className="size-4 text-muted-foreground shrink-0 group-data-[collapsible=icon]:hidden" />
@@ -91,13 +87,12 @@ export function AppSidebar() {
                 <DropdownMenuItem onClick={() => openModal("settings")}>Settings</DropdownMenuItem>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => signOut()} className="text-destructive">
+              <DropdownMenuItem className="text-destructive">
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </SidebarFooter>
-      )}
     </Sidebar>
   );
 }

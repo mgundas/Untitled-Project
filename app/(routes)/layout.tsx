@@ -4,10 +4,9 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Navbar } from "../components/Navbar";
 import { Toaster } from "@/components/ui/sonner";
-import { getServerSession } from "next-auth";
-import { authOptions } from "../../lib/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ModalManager } from "../components/ModalManager";
+import { PostComposer } from "../components/posts/PostComposer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,8 +28,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await getServerSession(authOptions);
-
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body
@@ -43,6 +40,7 @@ export default async function RootLayout({
               <Navbar />
               {children}
               <ModalManager />
+              <PostComposer />
             </div>
           </main>
           <Toaster />

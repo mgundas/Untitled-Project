@@ -1,4 +1,30 @@
-export { default } from "next-auth/middleware"
+import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
 
-// This tells the middleware which routes to protect
-export const config = { matcher: ["/settings/path:*", "/settings"] }
+export default async function middleware(request: NextRequest) {
+  const res = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            res.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  )
+
+  await supabase.auth.getUser()
+
+  return res
+}
+
+export const config = {
+  matcher: '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+}
