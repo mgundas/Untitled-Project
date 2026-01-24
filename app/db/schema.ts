@@ -47,11 +47,34 @@ export const comments = pgTable("comments", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Bookmarks table (save posts for later)
+export const bookmarks = pgTable("bookmarks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  postId: uuid("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueBookmark: unique("bookmarks_post_user_unique").on(table.postId, table.userId)
+}));
+
+// Follows table (user following system)
+export const follows = pgTable("follows", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  followerId: uuid("follower_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  followingId: uuid("following_id").notNull().references(() => profiles.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  uniqueFollow: unique("follows_follower_following_unique").on(table.followerId, table.followingId)
+}));
+
 // Relations
 export const profilesRelations = relations(profiles, ({ many }) => ({
   posts: many(posts),
   likes: many(likes),
   comments: many(comments),
+  bookmarks: many(bookmarks),
+  followers: many(follows, { relationName: "following" }),
+  following: many(follows, { relationName: "follower" }),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -70,4 +93,14 @@ export const likesRelations = relations(likes, ({ one }) => ({
 export const commentsRelations = relations(comments, ({ one }) => ({
   post: one(posts, { fields: [comments.postId], references: [posts.id] }),
   author: one(profiles, { fields: [comments.authorId], references: [profiles.id] }),
+}));
+
+export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
+  post: one(posts, { fields: [bookmarks.postId], references: [posts.id] }),
+  user: one(profiles, { fields: [bookmarks.userId], references: [profiles.id] }),
+}));
+
+export const followsRelations = relations(follows, ({ one }) => ({
+  follower: one(profiles, { fields: [follows.followerId], references: [profiles.id], relationName: "follower" }),
+  following: one(profiles, { fields: [follows.followingId], references: [profiles.id], relationName: "following" }),
 }));

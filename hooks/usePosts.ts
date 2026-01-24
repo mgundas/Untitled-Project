@@ -22,10 +22,10 @@ interface PostsResponse {
 export function usePostsFeed() {
   return useInfiniteQuery({
     queryKey: postKeys.list("feed"),
-    queryFn: ({ pageParam = null }) =>
+    queryFn: ({ pageParam }) =>
       apiClient<PostsResponse>(`/posts?cursor=${pageParam || ""}`),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: null,
+    initialPageParam: null as string | null,
     staleTime: 30 * 1000,
   });
 }
@@ -35,6 +35,14 @@ export function useUserPosts(userId: string) {
     queryKey: postKeys.userPosts(userId),
     queryFn: () => apiClient<{ posts: Post[] }>(`/users/${userId}/posts`),
     enabled: !!userId,
+  });
+}
+
+export function usePost(postId: string) {
+  return useQuery({
+    queryKey: postKeys.detail(postId),
+    queryFn: () => apiClient<Post>(`/posts/${postId}`),
+    enabled: !!postId,
   });
 }
 
@@ -53,10 +61,13 @@ export function useCreatePost() {
   return useMutation({
     mutationFn: (data: { content: string; isComment?: boolean; postId?: string }) =>
       apiClient<Post>("/posts", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: postKeys.lists() });
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: postKeys.all });
+      if (variables.isComment && variables.postId) {
+        queryClient.invalidateQueries({ queryKey: postKeys.comments(variables.postId) });
+      }
       closeComposer();
-      toast.success("Posted!");
+      toast.success(variables.isComment ? "Comment added!" : "Posted!");
     },
     onError: () => toast.error("Failed to post"),
   });
@@ -73,9 +84,13 @@ export function useToggleLike() {
       }),
 
     onMutate: async ({ postId, isLiked }) => {
-      await queryClient.cancelQueries({ queryKey: postKeys.lists() });
-      const previousPosts = queryClient.getQueryData(postKeys.list("feed"));
+      await queryClient.cancelQueries({ queryKey: postKeys.all });
+      const previousData = {
+        feed: queryClient.getQueryData(postKeys.list("feed")),
+        userPosts: queryClient.getQueriesData({ queryKey: postKeys.all }),
+      };
 
+      // Update feed queries
       queryClient.setQueriesData<any>({ queryKey: postKeys.lists() }, (old: any) => {
         if (!old?.pages) return old;
         return {
@@ -91,17 +106,38 @@ export function useToggleLike() {
         };
       });
 
+      // Update user posts queries
+      queryClient.setQueriesData<any>({ queryKey: [...postKeys.all, "user"] }, (old: any) => {
+        if (!old?.posts) return old;
+        return {
+          ...old,
+          posts: old.posts.map((post: Post) =>
+            post.id === postId
+              ? { ...post, isLikedByCurrentUser: isLiked, likesCount: post.likesCount + (isLiked ? 1 : -1) }
+              : post
+          ),
+        };
+      });
+
       toggleOptimisticLike(postId, isLiked);
-      return { previousPosts };
+      return { previousData };
     },
 
-    onError: (err, { postId }, context) => {
-      queryClient.setQueryData(postKeys.list("feed"), context?.previousPosts);
+    onError: (_err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(postKeys.list("feed"), context.previousData.feed);
+        context.previousData.userPosts.forEach(([key, data]) => {
+          queryClient.setQueryData(key, data);
+        });
+      }
       toast.error("Failed to like");
+      clearOptimistic(variables.postId);
+    },
+
+    onSettled: (_data, _error, { postId }) => {
+      queryClient.invalidateQueries({ queryKey: postKeys.all });
       clearOptimistic(postId);
     },
-
-    onSettled: (data, error, { postId }) => clearOptimistic(postId),
   });
 }
 
@@ -118,16 +154,18 @@ export function useToggleRepost() {
     },
 
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: postKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: postKeys.all });
       toast.success(data.isReposted ? "Reposted!" : "Repost removed");
     },
 
-    onError: (err, { postId }) => {
+    onError: (_err, { postId }) => {
       toast.error("Failed to repost");
       clearOptimistic(postId);
     },
 
-    onSettled: (data, error, { postId }) => clearOptimistic(postId),
+    onSettled: (_data, _error, { postId }) => {
+      clearOptimistic(postId);
+    },
   });
 }
 
@@ -137,9 +175,9 @@ export function useDeletePost() {
   return useMutation({
     mutationFn: (postId: string) => apiClient(`/posts/${postId}`, { method: "DELETE" }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: postKeys.lists() });
-      toast.success("Deleted");
+      queryClient.invalidateQueries({ queryKey: postKeys.all });
+      toast.success("Post deleted");
     },
-    onError: () => toast.error("Failed to delete"),
+    onError: () => toast.error("Failed to delete post"),
   });
 }
