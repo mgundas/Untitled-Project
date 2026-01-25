@@ -1,6 +1,6 @@
 import AuthButtons from "../components/AuthButtons";
 import { createClient } from '@/utils/supabase/server'
-import { PostFeed } from '../components/posts/PostFeed';
+import { FeedTabs } from '../components/posts/FeedTabs';
 import { PostComposerButton } from '../components/posts/PostComposerButton';
 
 export default async function Home() {
@@ -11,7 +11,7 @@ export default async function Home() {
 
   return (
     <div className="w-full h-full overflow-auto">
-      <PostFeed />
+      <FeedTabs />
       <PostComposerButton />
     </div>
   );

@@ -67,6 +67,18 @@ export const follows = pgTable("follows", {
   uniqueFollow: unique("follows_follower_following_unique").on(table.followerId, table.followingId)
 }));
 
+// Notifications table
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => profiles.id, { onDelete: "cascade" }), // Who receives the notification
+  actorId: uuid("actor_id").notNull().references(() => profiles.id, { onDelete: "cascade" }), // Who performed the action
+  type: text("type").notNull(), // "like", "repost", "comment", "follow"
+  postId: uuid("post_id").references(() => posts.id, { onDelete: "cascade" }), // Optional - for post-related notifications
+  commentId: uuid("comment_id").references(() => comments.id, { onDelete: "cascade" }), // Optional - for comment notifications
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Relations
 export const profilesRelations = relations(profiles, ({ many }) => ({
   posts: many(posts),
@@ -75,6 +87,8 @@ export const profilesRelations = relations(profiles, ({ many }) => ({
   bookmarks: many(bookmarks),
   followers: many(follows, { relationName: "following" }),
   following: many(follows, { relationName: "follower" }),
+  receivedNotifications: many(notifications, { relationName: "notificationRecipient" }),
+  sentNotifications: many(notifications, { relationName: "notificationActor" }),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({
@@ -103,4 +117,11 @@ export const bookmarksRelations = relations(bookmarks, ({ one }) => ({
 export const followsRelations = relations(follows, ({ one }) => ({
   follower: one(profiles, { fields: [follows.followerId], references: [profiles.id], relationName: "follower" }),
   following: one(profiles, { fields: [follows.followingId], references: [profiles.id], relationName: "following" }),
+}));
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(profiles, { fields: [notifications.userId], references: [profiles.id], relationName: "notificationRecipient" }),
+  actor: one(profiles, { fields: [notifications.actorId], references: [profiles.id], relationName: "notificationActor" }),
+  post: one(posts, { fields: [notifications.postId], references: [posts.id] }),
+  comment: one(comments, { fields: [notifications.commentId], references: [comments.id] }),
 }));

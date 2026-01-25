@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsUpDown, Home, User } from "lucide-react";
+import { ChevronsUpDown, Home, User, Bookmark, Bell } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -26,6 +26,7 @@ import Link from "next/link";
 import { useModal } from "@/app/store/useModalStateStore";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useUnreadCount } from "@/hooks/useNotifications";
 
 interface UserProfile {
   id: string;
@@ -38,6 +39,8 @@ export function AppSidebar() {
   const openModal = useModal((state) => state.open);
   const router = useRouter();
   const [user, setUser] = useState<UserProfile | null>(null);
+  const { data: unreadData } = useUnreadCount();
+  const unreadCount = unreadData?.count || 0;
 
   useEffect(() => {
     async function fetchUser() {
@@ -70,6 +73,17 @@ export function AppSidebar() {
       url: "/",
       icon: Home,
     },
+    {
+      title: "Notifications",
+      url: "/notifications",
+      icon: Bell,
+      badge: unreadCount > 0 ? unreadCount : undefined,
+    },
+    {
+      title: "Bookmarks",
+      url: "/bookmarks",
+      icon: Bookmark,
+    },
     ...(user ? [{
       title: "My Profile",
       url: `/profile/${user.id}`,
@@ -92,9 +106,14 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url}>
+                    <Link href={item.url} className="flex items-center gap-2">
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span className="flex-1">{item.title}</span>
+                      {item.badge && (
+                        <span className="bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                          {item.badge > 9 ? "9+" : item.badge}
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

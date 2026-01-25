@@ -20,6 +20,7 @@ export interface Post {
   originalPost?: Post | null;
   isLikedByCurrentUser?: boolean;
   isRepostedByCurrentUser?: boolean;
+  isBookmarkedByCurrentUser?: boolean;
 }
 
 interface PostState {
@@ -27,9 +28,11 @@ interface PostState {
   optimisticLikes: Set<string>;
   optimisticUnlikes: Set<string>;
   optimisticReposts: Set<string>;
+  optimisticBookmarks: Set<string>;
 
   toggleOptimisticLike: (postId: string, isLiked: boolean) => void;
   toggleOptimisticRepost: (postId: string) => void;
+  toggleOptimisticBookmark: (postId: string) => void;
   clearOptimistic: (postId: string) => void;
 
   // Composer state
@@ -45,6 +48,7 @@ export const usePostStore = create<PostState>()(
     optimisticLikes: new Set(),
     optimisticUnlikes: new Set(),
     optimisticReposts: new Set(),
+    optimisticBookmarks: new Set(),
 
     toggleOptimisticLike: (postId, isLiked) =>
       set((state) => {
@@ -71,15 +75,28 @@ export const usePostStore = create<PostState>()(
         return { optimisticReposts: newReposts };
       }),
 
+    toggleOptimisticBookmark: (postId) =>
+      set((state) => {
+        const newBookmarks = new Set(state.optimisticBookmarks);
+        if (newBookmarks.has(postId)) {
+          newBookmarks.delete(postId);
+        } else {
+          newBookmarks.add(postId);
+        }
+        return { optimisticBookmarks: newBookmarks };
+      }),
+
     clearOptimistic: (postId) =>
       set((state) => {
         const newLikes = new Set(state.optimisticLikes);
         const newUnlikes = new Set(state.optimisticUnlikes);
         const newReposts = new Set(state.optimisticReposts);
+        const newBookmarks = new Set(state.optimisticBookmarks);
         newLikes.delete(postId);
         newUnlikes.delete(postId);
         newReposts.delete(postId);
-        return { optimisticLikes: newLikes, optimisticUnlikes: newUnlikes, optimisticReposts: newReposts };
+        newBookmarks.delete(postId);
+        return { optimisticLikes: newLikes, optimisticUnlikes: newUnlikes, optimisticReposts: newReposts, optimisticBookmarks: newBookmarks };
       }),
 
     isComposerOpen: false,

@@ -1,19 +1,15 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/app/db";
-import { posts, profiles, likes, bookmarks } from "@/app/db/schema";
+import { bookmarks, posts, profiles, likes } from "@/app/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ userId: string }> }
-) {
-  const { userId } = await params;
+export async function GET() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const userPosts = await db
+  const userBookmarks = await db
     .select({
       id: posts.id,
       content: posts.content,
@@ -24,6 +20,7 @@ export async function GET(
       commentsCount: posts.commentsCount,
       isRepost: posts.isRepost,
       originalPostId: posts.originalPostId,
+      bookmarkedAt: bookmarks.createdAt,
       author: {
         id: profiles.id,
         fullName: profiles.fullName,
@@ -34,11 +31,7 @@ export async function GET(
         WHERE ${likes.postId} = ${posts.id}
         AND ${likes.userId} = ${user.id}
       )`,
-      isBookmarkedByCurrentUser: sql<boolean>`EXISTS(
-        SELECT 1 FROM ${bookmarks}
-        WHERE ${bookmarks.postId} = ${posts.id}
-        AND ${bookmarks.userId} = ${user.id}
-      )`,
+      isBookmarkedByCurrentUser: sql<boolean>`true`,
       isRepostedByCurrentUser: sql<boolean>`EXISTS(
         SELECT 1 FROM ${posts} AS reposts
         WHERE reposts.original_post_id = ${posts.id}
@@ -46,16 +39,18 @@ export async function GET(
         AND reposts.is_repost = true
       )`,
     })
-    .from(posts)
+    .from(bookmarks)
+    .innerJoin(posts, eq(bookmarks.postId, posts.id))
     .leftJoin(profiles, eq(posts.authorId, profiles.id))
-    .where(eq(posts.authorId, userId))
-    .orderBy(desc(posts.createdAt))
+    .where(eq(bookmarks.userId, user.id))
+    .orderBy(desc(bookmarks.createdAt))
     .limit(50);
 
-  const formattedPosts = userPosts.map(post => ({
-    ...post,
-    createdAt: post.createdAt.toISOString(),
+  const formattedBookmarks = userBookmarks.map(bookmark => ({
+    ...bookmark,
+    createdAt: bookmark.createdAt.toISOString(),
+    bookmarkedAt: bookmark.bookmarkedAt.toISOString(),
   }));
 
-  return NextResponse.json({ posts: formattedPosts });
+  return NextResponse.json({ posts: formattedBookmarks });
 }

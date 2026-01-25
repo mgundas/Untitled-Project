@@ -1,9 +1,9 @@
 "use client";
 
 import { Post, usePostStore } from "@/app/store/usePostStore";
-import { useToggleLike, useToggleRepost, useDeletePost } from "@/hooks/usePosts";
+import { useToggleLike, useToggleRepost, useDeletePost, useToggleBookmark } from "@/hooks/usePosts";
 import { Button } from "@/components/ui/button";
-import { Heart, MessageCircle, Repeat2, Trash2, MoreHorizontal } from "lucide-react";
+import { Heart, MessageCircle, Repeat2, Trash2, MoreHorizontal, Bookmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import {
@@ -17,6 +17,7 @@ export function PostActions({ post }: { post: Post }) {
   const { openComposer } = usePostStore();
   const toggleLike = useToggleLike();
   const toggleRepost = useToggleRepost();
+  const toggleBookmark = useToggleBookmark();
   const deletePost = useDeletePost();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -48,6 +49,10 @@ export function PostActions({ post }: { post: Post }) {
 
   const handleComment = () => {
     openComposer("comment", post.id);
+  };
+
+  const handleBookmark = () => {
+    toggleBookmark.mutate({ postId: post.id });
   };
 
   const handleDelete = () => {
@@ -95,6 +100,19 @@ export function PostActions({ post }: { post: Post }) {
         >
           <Heart className={cn("h-4 w-4", post.isLikedByCurrentUser && "fill-current")} />
           <span className="text-xs">Like</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleBookmark}
+          className={cn(
+            "gap-2 text-muted-foreground hover:text-yellow-500",
+            post.isBookmarkedByCurrentUser && "text-yellow-500"
+          )}
+        >
+          <Bookmark className={cn("h-4 w-4", post.isBookmarkedByCurrentUser && "fill-current")} />
+          <span className="text-xs">Save</span>
         </Button>
       </div>
 

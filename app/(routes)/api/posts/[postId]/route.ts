@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { db } from "@/app/db";
-import { posts, profiles } from "@/app/db/schema";
-import { eq } from "drizzle-orm";
+import { posts, profiles, likes, bookmarks } from "@/app/db/schema";
+import { eq, sql } from "drizzle-orm";
 
 export async function GET(
   request: NextRequest,
@@ -19,14 +19,33 @@ export async function GET(
       content: posts.content,
       authorId: posts.authorId,
       createdAt: posts.createdAt,
+      updatedAt: posts.updatedAt,
       likesCount: posts.likesCount,
       repostsCount: posts.repostsCount,
       commentsCount: posts.commentsCount,
+      isRepost: posts.isRepost,
+      originalPostId: posts.originalPostId,
       author: {
         id: profiles.id,
         fullName: profiles.fullName,
         avatarUrl: profiles.avatarUrl,
       },
+      isLikedByCurrentUser: sql<boolean>`EXISTS(
+        SELECT 1 FROM ${likes}
+        WHERE ${likes.postId} = ${posts.id}
+        AND ${likes.userId} = ${user.id}
+      )`,
+      isBookmarkedByCurrentUser: sql<boolean>`EXISTS(
+        SELECT 1 FROM ${bookmarks}
+        WHERE ${bookmarks.postId} = ${posts.id}
+        AND ${bookmarks.userId} = ${user.id}
+      )`,
+      isRepostedByCurrentUser: sql<boolean>`EXISTS(
+        SELECT 1 FROM ${posts} AS reposts
+        WHERE reposts.original_post_id = ${posts.id}
+        AND reposts.author_id = ${user.id}
+        AND reposts.is_repost = true
+      )`,
     })
     .from(posts)
     .leftJoin(profiles, eq(posts.authorId, profiles.id))
@@ -37,6 +56,7 @@ export async function GET(
   return NextResponse.json({
     ...post,
     createdAt: post.createdAt.toISOString(),
+    updatedAt: post.updatedAt?.toISOString() || null,
   });
 }
 

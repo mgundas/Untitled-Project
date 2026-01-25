@@ -30,6 +30,17 @@ export function usePostsFeed() {
   });
 }
 
+export function useFollowingFeed() {
+  return useInfiniteQuery({
+    queryKey: postKeys.list("following"),
+    queryFn: ({ pageParam }) =>
+      apiClient<PostsResponse>(`/posts/following?cursor=${pageParam || ""}`),
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: null as string | null,
+    staleTime: 30 * 1000,
+  });
+}
+
 export function useUserPosts(userId: string) {
   return useQuery({
     queryKey: postKeys.userPosts(userId),
@@ -75,7 +86,6 @@ export function useCreatePost() {
 
 export function useToggleLike() {
   const queryClient = useQueryClient();
-  const { toggleOptimisticLike, clearOptimistic } = usePostStore();
 
   return useMutation({
     mutationFn: ({ postId, isLiked }: { postId: string; isLiked: boolean }) =>
@@ -84,24 +94,47 @@ export function useToggleLike() {
       }),
 
     onMutate: async ({ postId, isLiked }) => {
+      // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: postKeys.all });
+
+      // Snapshot previous values
       const previousData = {
         feed: queryClient.getQueryData(postKeys.list("feed")),
-        userPosts: queryClient.getQueriesData({ queryKey: postKeys.all }),
+        following: queryClient.getQueryData(postKeys.list("following")),
+        userPosts: queryClient.getQueriesData({ queryKey: [...postKeys.all, "user"] }),
+        bookmarks: queryClient.getQueryData([...postKeys.all, "bookmarks"]),
+        detail: queryClient.getQueryData(postKeys.detail(postId)),
       };
 
-      // Update feed queries
-      queryClient.setQueriesData<any>({ queryKey: postKeys.lists() }, (old: any) => {
+      const updatePost = (post: Post) =>
+        post.id === postId
+          ? {
+              ...post,
+              isLikedByCurrentUser: isLiked,
+              likesCount: post.likesCount + (isLiked ? 1 : -1)
+            }
+          : post;
+
+      // Update For You feed
+      queryClient.setQueryData<any>(postKeys.list("feed"), (old: any) => {
         if (!old?.pages) return old;
         return {
           ...old,
           pages: old.pages.map((page: any) => ({
             ...page,
-            posts: page.posts.map((post: Post) =>
-              post.id === postId
-                ? { ...post, isLikedByCurrentUser: isLiked, likesCount: post.likesCount + (isLiked ? 1 : -1) }
-                : post
-            ),
+            posts: page.posts.map(updatePost),
+          })),
+        };
+      });
+
+      // Update Following feed
+      queryClient.setQueryData<any>(postKeys.list("following"), (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            posts: page.posts.map(updatePost),
           })),
         };
       });
@@ -111,60 +144,185 @@ export function useToggleLike() {
         if (!old?.posts) return old;
         return {
           ...old,
-          posts: old.posts.map((post: Post) =>
-            post.id === postId
-              ? { ...post, isLikedByCurrentUser: isLiked, likesCount: post.likesCount + (isLiked ? 1 : -1) }
-              : post
-          ),
+          posts: old.posts.map(updatePost),
         };
       });
 
-      toggleOptimisticLike(postId, isLiked);
+      // Update bookmarks
+      queryClient.setQueryData<any>([...postKeys.all, "bookmarks"], (old: any) => {
+        if (!old?.posts) return old;
+        return {
+          ...old,
+          posts: old.posts.map(updatePost),
+        };
+      });
+
+      // Update single post detail query
+      queryClient.setQueryData<Post>(postKeys.detail(postId), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isLikedByCurrentUser: isLiked,
+          likesCount: old.likesCount + (isLiked ? 1 : -1),
+        };
+      });
+
       return { previousData };
     },
 
-    onError: (_err, variables, context) => {
+    onError: (_err, _variables, context) => {
+      // Rollback to previous values on error
       if (context?.previousData) {
-        queryClient.setQueryData(postKeys.list("feed"), context.previousData.feed);
+        if (context.previousData.feed) {
+          queryClient.setQueryData(postKeys.list("feed"), context.previousData.feed);
+        }
+        if (context.previousData.following) {
+          queryClient.setQueryData(postKeys.list("following"), context.previousData.following);
+        }
+        if (context.previousData.bookmarks) {
+          queryClient.setQueryData([...postKeys.all, "bookmarks"], context.previousData.bookmarks);
+        }
         context.previousData.userPosts.forEach(([key, data]) => {
           queryClient.setQueryData(key, data);
         });
+        if (context.previousData.detail) {
+          queryClient.setQueryData(postKeys.detail(_variables.postId), context.previousData.detail);
+        }
       }
-      toast.error("Failed to like");
-      clearOptimistic(variables.postId);
+      toast.error("Failed to update like");
     },
 
-    onSettled: (_data, _error, { postId }) => {
-      queryClient.invalidateQueries({ queryKey: postKeys.all });
-      clearOptimistic(postId);
+    onSuccess: () => {
+      // Don't show success toast for likes - it's too noisy
     },
   });
 }
 
 export function useToggleRepost() {
   const queryClient = useQueryClient();
-  const { toggleOptimisticRepost, clearOptimistic } = usePostStore();
 
   return useMutation({
     mutationFn: ({ postId }: { postId: string }) =>
       apiClient<{ success: boolean; isReposted: boolean }>(`/posts/${postId}/repost`, { method: "POST" }),
 
     onMutate: async ({ postId }) => {
-      toggleOptimisticRepost(postId);
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: postKeys.all });
+
+      // Snapshot previous values
+      const previousData = {
+        feed: queryClient.getQueryData(postKeys.list("feed")),
+        following: queryClient.getQueryData(postKeys.list("following")),
+        userPosts: queryClient.getQueriesData({ queryKey: [...postKeys.all, "user"] }),
+        bookmarks: queryClient.getQueryData([...postKeys.all, "bookmarks"]),
+        detail: queryClient.getQueryData(postKeys.detail(postId)),
+      };
+
+      // Get current repost state to toggle it
+      let currentIsReposted = false;
+      const currentData = queryClient.getQueryData<any>(postKeys.list("feed"));
+      if (currentData?.pages) {
+        for (const page of currentData.pages) {
+          const post = page.posts.find((p: Post) => p.id === postId);
+          if (post) {
+            currentIsReposted = post.isRepostedByCurrentUser || false;
+            break;
+          }
+        }
+      }
+
+      const newIsReposted = !currentIsReposted;
+
+      const updatePost = (post: Post) =>
+        post.id === postId
+          ? {
+              ...post,
+              isRepostedByCurrentUser: newIsReposted,
+              repostsCount: post.repostsCount + (newIsReposted ? 1 : -1)
+            }
+          : post;
+
+      // Update For You feed
+      queryClient.setQueryData<any>(postKeys.list("feed"), (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            posts: page.posts.map(updatePost),
+          })),
+        };
+      });
+
+      // Update Following feed
+      queryClient.setQueryData<any>(postKeys.list("following"), (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            posts: page.posts.map(updatePost),
+          })),
+        };
+      });
+
+      // Update user posts queries
+      queryClient.setQueriesData<any>({ queryKey: [...postKeys.all, "user"] }, (old: any) => {
+        if (!old?.posts) return old;
+        return {
+          ...old,
+          posts: old.posts.map(updatePost),
+        };
+      });
+
+      // Update bookmarks
+      queryClient.setQueryData<any>([...postKeys.all, "bookmarks"], (old: any) => {
+        if (!old?.posts) return old;
+        return {
+          ...old,
+          posts: old.posts.map(updatePost),
+        };
+      });
+
+      // Update single post detail query
+      queryClient.setQueryData<Post>(postKeys.detail(postId), (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          isRepostedByCurrentUser: newIsReposted,
+          repostsCount: old.repostsCount + (newIsReposted ? 1 : -1),
+        };
+      });
+
+      return { previousData, newIsReposted };
     },
 
-    onSuccess: (data) => {
+    onError: (_err, _variables, context) => {
+      // Rollback to previous values on error
+      if (context?.previousData) {
+        if (context.previousData.feed) {
+          queryClient.setQueryData(postKeys.list("feed"), context.previousData.feed);
+        }
+        if (context.previousData.following) {
+          queryClient.setQueryData(postKeys.list("following"), context.previousData.following);
+        }
+        if (context.previousData.bookmarks) {
+          queryClient.setQueryData([...postKeys.all, "bookmarks"], context.previousData.bookmarks);
+        }
+        context.previousData.userPosts.forEach(([key, data]) => {
+          queryClient.setQueryData(key, data);
+        });
+        if (context.previousData.detail) {
+          queryClient.setQueryData(postKeys.detail(_variables.postId), context.previousData.detail);
+        }
+      }
+      toast.error("Failed to repost");
+    },
+
+    onSuccess: (data, _variables, context) => {
+      // Invalidate to refetch the new repost in the feed
       queryClient.invalidateQueries({ queryKey: postKeys.all });
       toast.success(data.isReposted ? "Reposted!" : "Repost removed");
-    },
-
-    onError: (_err, { postId }) => {
-      toast.error("Failed to repost");
-      clearOptimistic(postId);
-    },
-
-    onSettled: (_data, _error, { postId }) => {
-      clearOptimistic(postId);
     },
   });
 }
@@ -179,5 +337,148 @@ export function useDeletePost() {
       toast.success("Post deleted");
     },
     onError: () => toast.error("Failed to delete post"),
+  });
+}
+
+export function useToggleBookmark() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ postId }: { postId: string }) =>
+      apiClient<{ success: boolean; isBookmarked: boolean }>(`/posts/${postId}/bookmark`, { method: "POST" }),
+
+    onMutate: async ({ postId }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: postKeys.all });
+
+      // Snapshot previous values
+      const previousData = {
+        feed: queryClient.getQueryData(postKeys.list("feed")),
+        following: queryClient.getQueryData(postKeys.list("following")),
+        userPosts: queryClient.getQueriesData({ queryKey: [...postKeys.all, "user"] }),
+        bookmarks: queryClient.getQueryData([...postKeys.all, "bookmarks"]),
+        detail: queryClient.getQueryData(postKeys.detail(postId)),
+      };
+
+      // Get current bookmark state to toggle it
+      let currentIsBookmarked = false;
+      const currentData = queryClient.getQueryData<any>(postKeys.list("feed"));
+      if (currentData?.pages) {
+        for (const page of currentData.pages) {
+          const post = page.posts.find((p: Post) => p.id === postId);
+          if (post) {
+            currentIsBookmarked = post.isBookmarkedByCurrentUser || false;
+            break;
+          }
+        }
+      }
+
+      const newIsBookmarked = !currentIsBookmarked;
+
+      const updatePost = (post: Post) =>
+        post.id === postId ? { ...post, isBookmarkedByCurrentUser: newIsBookmarked } : post;
+
+      // Update For You feed
+      queryClient.setQueryData<any>(postKeys.list("feed"), (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            posts: page.posts.map(updatePost),
+          })),
+        };
+      });
+
+      // Update Following feed
+      queryClient.setQueryData<any>(postKeys.list("following"), (old: any) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            posts: page.posts.map(updatePost),
+          })),
+        };
+      });
+
+      // Update user posts queries
+      queryClient.setQueriesData<any>({ queryKey: [...postKeys.all, "user"] }, (old: any) => {
+        if (!old?.posts) return old;
+        return {
+          ...old,
+          posts: old.posts.map(updatePost),
+        };
+      });
+
+      // Update bookmarks
+      queryClient.setQueryData<any>([...postKeys.all, "bookmarks"], (old: any) => {
+        if (!old?.posts) return old;
+        return {
+          ...old,
+          posts: old.posts.map(updatePost),
+        };
+      });
+
+      // Update single post detail query
+      queryClient.setQueryData<Post>(postKeys.detail(postId), (old: any) => {
+        if (!old) return old;
+        return { ...old, isBookmarkedByCurrentUser: newIsBookmarked };
+      });
+
+      return { previousData, newIsBookmarked };
+    },
+
+    onError: (_err, _variables, context) => {
+      // Rollback to previous values on error
+      if (context?.previousData) {
+        if (context.previousData.feed) {
+          queryClient.setQueryData(postKeys.list("feed"), context.previousData.feed);
+        }
+        if (context.previousData.following) {
+          queryClient.setQueryData(postKeys.list("following"), context.previousData.following);
+        }
+        if (context.previousData.bookmarks) {
+          queryClient.setQueryData([...postKeys.all, "bookmarks"], context.previousData.bookmarks);
+        }
+        context.previousData.userPosts.forEach(([key, data]) => {
+          queryClient.setQueryData(key, data);
+        });
+        if (context.previousData.detail) {
+          queryClient.setQueryData(postKeys.detail(_variables.postId), context.previousData.detail);
+        }
+      }
+      toast.error("Failed to update bookmark");
+    },
+
+    onSuccess: (_data, _variables, context) => {
+      // Show success message based on the optimistic state
+      toast.success(context?.newIsBookmarked ? "Bookmarked!" : "Bookmark removed");
+    },
+  });
+}
+
+export function useBookmarks() {
+  return useQuery({
+    queryKey: [...postKeys.all, "bookmarks"],
+    queryFn: () => apiClient<{ posts: Post[] }>("/bookmarks"),
+  });
+}
+
+export function useToggleFollow() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId }: { userId: string }) =>
+      apiClient<{ success: boolean; isFollowing: boolean }>(`/users/${userId}/follow`, { method: "POST" }),
+
+    onSuccess: (data, { userId }) => {
+      // Only invalidate following feed to show new posts from followed user
+      // Don't invalidate user posts or other feeds to avoid flickering
+      queryClient.invalidateQueries({ queryKey: postKeys.list("following") });
+      toast.success(data.isFollowing ? "Following!" : "Unfollowed");
+    },
+
+    onError: () => toast.error("Failed to follow"),
   });
 }
