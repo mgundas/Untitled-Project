@@ -5,10 +5,14 @@ import { PostCard } from "./PostCard";
 import { useInView } from "react-intersection-observer";
 import { useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePostRealtime } from "@/hooks/usePostRealtime";
 
 export function PostFeed() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = usePostsFeed();
   const { ref, inView } = useInView({ threshold: 0 });
+
+  // Subscribe to realtime updates
+  usePostRealtime();
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {

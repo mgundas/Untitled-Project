@@ -4,9 +4,13 @@ import { useBookmarks } from "@/hooks/usePosts";
 import { PostCard } from "@/app/components/posts/PostCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bookmark } from "lucide-react";
+import { usePostRealtime } from "@/hooks/usePostRealtime";
 
 export default function BookmarksPage() {
   const { data, isLoading } = useBookmarks();
+
+  // Subscribe to realtime updates
+  usePostRealtime();
 
   if (isLoading) {
     return (
@@ -58,7 +62,7 @@ export default function BookmarksPage() {
         ) : (
           <div className="divide-y">
             {posts.map((post) => (
-              <PostCard key={post.id} post={post} />
+              <PostCard key={`${post.id}-${post.isLikedByCurrentUser}-${post.likesCount}`} post={post} />
             ))}
           </div>
         )}

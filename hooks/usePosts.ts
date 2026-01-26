@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tansta
 import { apiClient } from "@/lib/api-client";
 import { usePostStore, Post } from "@/app/store/usePostStore";
 import { toast } from "sonner";
+import { broadcastPostUpdate } from "./usePostRealtime";
 
 export const postKeys = {
   all: ["posts"] as const,
@@ -73,10 +74,25 @@ export function useCreatePost() {
   return useMutation({
     mutationFn: (data: { content: string; isComment?: boolean; postId?: string }) =>
       apiClient<Post>("/posts", { method: "POST", body: JSON.stringify(data) }),
-    onSuccess: (_data, variables) => {
+    onSuccess: async (data, variables) => {
       queryClient.invalidateQueries({ queryKey: postKeys.all });
       if (variables.isComment && variables.postId) {
         queryClient.invalidateQueries({ queryKey: postKeys.comments(variables.postId) });
+
+        // Broadcast comment event (comment count will update on refetch)
+        await broadcastPostUpdate({
+          type: "COMMENT",
+          postId: variables.postId,
+          userId: "",
+        });
+      } else {
+        // Broadcast new post to other clients (only if not a comment)
+        await broadcastPostUpdate({
+          type: "CREATE",
+          postId: data.id,
+          userId: "",
+          newPost: data,
+        });
       }
       closeComposer();
       toast.success(variables.isComment ? "Comment added!" : "Posted!");
@@ -209,8 +225,36 @@ export function useToggleLike() {
       toast.error("Failed to update like");
     },
 
-    onSuccess: () => {
+    onSuccess: async (_data, variables) => {
       // Don't show success toast for likes - it's too noisy
+
+      // Broadcast to other clients
+      const currentData = queryClient.getQueryData<any>(postKeys.list("feed"));
+      let likesCount = 0;
+
+      if (currentData?.pages) {
+        for (const page of currentData.pages) {
+          const post = page.posts.find((p: Post) => p.id === variables.postId);
+          if (post) {
+            likesCount = post.likesCount;
+            break;
+          }
+          // Also check originalPost
+          const repost = page.posts.find((p: Post) => p.originalPost?.id === variables.postId);
+          if (repost?.originalPost) {
+            likesCount = repost.originalPost.likesCount;
+            break;
+          }
+        }
+      }
+
+      await broadcastPostUpdate({
+        type: variables.isLiked ? "LIKE" : "UNLIKE",
+        postId: variables.postId,
+        userId: "",
+        likesCount,
+        // Don't broadcast personal state - each user manages their own
+      });
     },
   });
 }
@@ -352,10 +396,38 @@ export function useToggleRepost() {
       toast.error("Failed to repost");
     },
 
-    onSuccess: (data, _variables, context) => {
+    onSuccess: async (data, variables, context) => {
       // Invalidate to refetch the new repost in the feed
       queryClient.invalidateQueries({ queryKey: postKeys.all });
       toast.success(data.isReposted ? "Reposted!" : "Repost removed");
+
+      // Broadcast to other clients
+      const currentData = queryClient.getQueryData<any>(postKeys.list("feed"));
+      let repostsCount = 0;
+
+      if (currentData?.pages) {
+        for (const page of currentData.pages) {
+          const post = page.posts.find((p: Post) => p.id === variables.postId);
+          if (post) {
+            repostsCount = post.repostsCount;
+            break;
+          }
+          // Also check originalPost
+          const repost = page.posts.find((p: Post) => p.originalPost?.id === variables.postId);
+          if (repost?.originalPost) {
+            repostsCount = repost.originalPost.repostsCount;
+            break;
+          }
+        }
+      }
+
+      await broadcastPostUpdate({
+        type: data.isReposted ? "REPOST" : "UNREPOST",
+        postId: variables.postId,
+        userId: "",
+        repostsCount,
+        // Don't broadcast personal state - each user manages their own
+      });
     },
   });
 }
@@ -365,9 +437,16 @@ export function useDeletePost() {
 
   return useMutation({
     mutationFn: (postId: string) => apiClient(`/posts/${postId}`, { method: "DELETE" }),
-    onSuccess: () => {
+    onSuccess: async (_data, postId) => {
       queryClient.invalidateQueries({ queryKey: postKeys.all });
       toast.success("Post deleted");
+
+      // Broadcast to other clients
+      await broadcastPostUpdate({
+        type: "DELETE",
+        postId,
+        userId: "",
+      });
     },
     onError: () => toast.error("Failed to delete post"),
   });
@@ -501,9 +580,17 @@ export function useToggleBookmark() {
       toast.error("Failed to update bookmark");
     },
 
-    onSuccess: (_data, _variables, context) => {
+    onSuccess: async (_data, variables, context) => {
       // Show success message based on the optimistic state
       toast.success(context?.newIsBookmarked ? "Bookmarked!" : "Bookmark removed");
+
+      // Broadcast to other clients (bookmarks don't have counts, so just notify)
+      await broadcastPostUpdate({
+        type: context?.newIsBookmarked ? "BOOKMARK" : "UNBOOKMARK",
+        postId: variables.postId,
+        userId: "",
+        // Bookmarks are personal - no need to broadcast any data
+      });
     },
   });
 }

@@ -8,10 +8,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { UserPlus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { usePostRealtime } from "@/hooks/usePostRealtime";
 
 export function FollowingFeed() {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useFollowingFeed();
   const { ref, inView } = useInView({ threshold: 0 });
+
+  // Subscribe to realtime updates
+  usePostRealtime();
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -58,7 +62,7 @@ export function FollowingFeed() {
   return (
     <div className="w-full max-w-2xl mx-auto divide-y">
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={`${post.id}-${post.isLikedByCurrentUser}-${post.likesCount}`} post={post} />
       ))}
       {hasNextPage && (
         <div ref={ref} className="py-4 text-center text-muted-foreground">
