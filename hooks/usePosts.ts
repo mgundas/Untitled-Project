@@ -27,6 +27,7 @@ export function usePostsFeed() {
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: null as string | null,
     staleTime: 30 * 1000,
+    structuralSharing: false, // Disable structural sharing to ensure updates trigger re-renders
   });
 }
 
@@ -106,14 +107,30 @@ export function useToggleLike() {
         detail: queryClient.getQueryData(postKeys.detail(postId)),
       };
 
-      const updatePost = (post: Post) =>
-        post.id === postId
-          ? {
-              ...post,
+      const updatePost = (post: Post): Post => {
+        // Update the post if it matches
+        if (post.id === postId) {
+          return {
+            ...post,
+            isLikedByCurrentUser: isLiked,
+            likesCount: post.likesCount + (isLiked ? 1 : -1)
+          };
+        }
+
+        // Also update the originalPost if this is a repost and the original matches
+        if (post.isRepost && post.originalPost && post.originalPost.id === postId) {
+          return {
+            ...post,
+            originalPost: {
+              ...post.originalPost,
               isLikedByCurrentUser: isLiked,
-              likesCount: post.likesCount + (isLiked ? 1 : -1)
+              likesCount: post.originalPost.likesCount + (isLiked ? 1 : -1)
             }
-          : post;
+          };
+        }
+
+        return post;
+      };
 
       // Update For You feed
       queryClient.setQueryData<any>(postKeys.list("feed"), (old: any) => {
@@ -233,14 +250,30 @@ export function useToggleRepost() {
 
       const newIsReposted = !currentIsReposted;
 
-      const updatePost = (post: Post) =>
-        post.id === postId
-          ? {
-              ...post,
+      const updatePost = (post: Post): Post => {
+        // Update the post if it matches
+        if (post.id === postId) {
+          return {
+            ...post,
+            isRepostedByCurrentUser: newIsReposted,
+            repostsCount: post.repostsCount + (newIsReposted ? 1 : -1)
+          };
+        }
+
+        // Also update the originalPost if this is a repost and the original matches
+        if (post.isRepost && post.originalPost && post.originalPost.id === postId) {
+          return {
+            ...post,
+            originalPost: {
+              ...post.originalPost,
               isRepostedByCurrentUser: newIsReposted,
-              repostsCount: post.repostsCount + (newIsReposted ? 1 : -1)
+              repostsCount: post.originalPost.repostsCount + (newIsReposted ? 1 : -1)
             }
-          : post;
+          };
+        }
+
+        return post;
+      };
 
       // Update For You feed
       queryClient.setQueryData<any>(postKeys.list("feed"), (old: any) => {
@@ -375,8 +408,25 @@ export function useToggleBookmark() {
 
       const newIsBookmarked = !currentIsBookmarked;
 
-      const updatePost = (post: Post) =>
-        post.id === postId ? { ...post, isBookmarkedByCurrentUser: newIsBookmarked } : post;
+      const updatePost = (post: Post): Post => {
+        // Update the post if it matches
+        if (post.id === postId) {
+          return { ...post, isBookmarkedByCurrentUser: newIsBookmarked };
+        }
+
+        // Also update the originalPost if this is a repost and the original matches
+        if (post.isRepost && post.originalPost && post.originalPost.id === postId) {
+          return {
+            ...post,
+            originalPost: {
+              ...post.originalPost,
+              isBookmarkedByCurrentUser: newIsBookmarked
+            }
+          };
+        }
+
+        return post;
+      };
 
       // Update For You feed
       queryClient.setQueryData<any>(postKeys.list("feed"), (old: any) => {

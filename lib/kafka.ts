@@ -4,7 +4,7 @@ const globalForKafka = global as unknown as { kafkaProducer: Producer };
 
 export const kafka = new Kafka({
   clientId: 'my-app',
-  brokers: ['10.15.20.102:9092'],
+  brokers: ['homepi:9092'],
   retry: {
     initialRetryTime: 100,
     retries: 8 // Give it more tries to find the coordinator on startup

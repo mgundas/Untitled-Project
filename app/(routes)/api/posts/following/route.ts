@@ -95,6 +95,22 @@ export async function GET(request: NextRequest) {
           fullName: profiles.fullName,
           avatarUrl: profiles.avatarUrl,
         },
+        isLikedByCurrentUser: sql<boolean>`EXISTS(
+          SELECT 1 FROM ${likes}
+          WHERE ${likes.postId} = ${posts.id}
+          AND ${likes.userId} = ${user.id}
+        )`,
+        isBookmarkedByCurrentUser: sql<boolean>`EXISTS(
+          SELECT 1 FROM ${bookmarks}
+          WHERE ${bookmarks.postId} = ${posts.id}
+          AND ${bookmarks.userId} = ${user.id}
+        )`,
+        isRepostedByCurrentUser: sql<boolean>`EXISTS(
+          SELECT 1 FROM ${posts} AS reposts
+          WHERE reposts.original_post_id = ${posts.id}
+          AND reposts.author_id = ${user.id}
+          AND reposts.is_repost = true
+        )`,
       })
       .from(posts)
       .leftJoin(profiles, eq(posts.authorId, profiles.id))

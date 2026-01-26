@@ -39,7 +39,7 @@ export function PostFeed() {
   return (
     <div className="w-full max-w-2xl mx-auto divide-y">
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={`${post.id}-${post.isLikedByCurrentUser}-${post.likesCount}`} post={post} />
       ))}
       {hasNextPage && (
         <div ref={ref} className="py-4 text-center text-muted-foreground">

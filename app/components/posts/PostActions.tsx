@@ -36,22 +36,30 @@ export function PostActions({ post }: { post: Post }) {
     fetchUser();
   }, []);
 
-  const handleLike = () => {
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     toggleLike.mutate({
       postId: post.id,
       isLiked: !post.isLikedByCurrentUser,
     });
   };
 
-  const handleRepost = () => {
+  const handleRepost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     toggleRepost.mutate({ postId: post.id });
   };
 
-  const handleComment = () => {
+  const handleComment = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     openComposer("comment", post.id);
   };
 
-  const handleBookmark = () => {
+  const handleBookmark = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     toggleBookmark.mutate({ postId: post.id });
   };
 
